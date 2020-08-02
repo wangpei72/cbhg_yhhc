@@ -156,7 +156,7 @@ print(len(tone_set))
 print(len(seg_tag_set))
 print(len(prosody_set))
 
-for file in dir_lab[:1]:
+for file in dir_lab[:20]:
 	file_name = os.path.splitext(file)[0]
 	print("file:", file_name)
 	file_name_mel = os.path.join(path_mel, file_name + '.npy')
