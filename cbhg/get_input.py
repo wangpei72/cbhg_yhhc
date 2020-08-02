@@ -4,7 +4,7 @@
 import os, sys
 import numpy as np
 import tensorflow as tf
-from tacotron.models import modules
+from .models import modules
 
 
 
