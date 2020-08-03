@@ -5,7 +5,7 @@ import os, sys
 import numpy as np
 import tensorflow as tf
 # from .models import modules
-
+from tensorflow.contrib.rnn import GRUCell
 
 def cbhg(inputs, input_lengths, is_training, scope, K, projections, depth):
 	with tf.variable_scope(scope):
@@ -90,7 +90,7 @@ def prenet2_yhhc(input):
 
 def cbhg_yhhc(input_lab, input_dim=None):
 	input_lab = prenet_yhhc(input_lab)
-	return modules.cbhg(inputs_lab,
+	return cbhg(inputs_lab,
 	                    input_dim,
 	                    True,
 	                    scope='cbhg_yhhc',
@@ -220,7 +220,7 @@ c = sess.run(input_seg_embedding, feed_dict={input_seg_ids:inputs_lab[:,:,2]})
 d = sess.run(input_prsd_embedding, feed_dict={input_prsd_ids:inputs_lab[:,:,3]})
 e = inputs_lab[:,:,4:].astype(np.float32)
 # f = inputs_lab[:,:,5].astype(np.float32)
-print(sess.run(tf.concat([a,b,c,d,e],axis=-1)))
+input_concat = sess.run(tf.concat([a,b,c,d,e],axis=-1))
 # print(np.array(a).shape)
 # print(sess.run(input_seg_embedding, feed_dict={input_seg_ids:inputs_lab[:,:,2]}))
 # print("phone_em:", sess.run(input_phone_set_embedding, feed_dict={input_phone_set_ids:inputs_lab[:,0],
@@ -241,7 +241,7 @@ print(sess.run(tf.concat([a,b,c,d,e],axis=-1)))
 batch_size = 250
 LEARNING_RATE_BASE = 0.01
 LEARNING_RATE_DECAY = 0.99
-n_batch = len(inputs_lab) // batch_size
+n_batch = len(input_concat) // batch_size
 
 
 input_x = tf.compat.v1.placeholder(tf.float32, [None, 578])
@@ -276,11 +276,11 @@ with tf.compat.v1.Session() as sess:
 			# else:
 			# 	batch_xs = np.append(batch_xs, [x_b], axis=0)
 			# 	batch_ys = np.append(batch_ys, [y_b], axis=0)
-			sess.run(train, feed_dict={input_x: inputs_lab[batch*batch_size:(batch+1)*batch_size, :],
+			sess.run(train, feed_dict={input_x: input_concat[batch*batch_size:(batch+1)*batch_size, :],
 			                           mel_y: inputs_mel[batch*batch_size:(batch+1)*batch_size, :]})
 		if epoch % 4 == 0:
 			# acc = sess.run(accuracy, feed_dict={x: X_test, y: Y_test})
-			print(sess.run(loss_batch, feed_dict={input_x: inputs_lab[batch*batch_size:(batch+1)*batch_size, :],
+			print(sess.run(loss_batch, feed_dict={input_x: input_concat[batch*batch_size:(batch+1)*batch_size, :],
 			                           mel_y: inputs_mel[batch*batch_size:(batch+1)*batch_size, :]}) )
 			saver.save(sess, "model.ckpt")
 	end_time = time.perf_counter()
