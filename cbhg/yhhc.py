@@ -140,8 +140,8 @@ for c in range(len(prosody_set)):
 
 
 
-path_lab = '/home/wangpei/PycharmProjects/shuqi/labels'
-path_mel = '/home/wangpei/PycharmProjects/shuqi/mels'
+path_lab = '/home/team08/shuqi/labels'
+path_mel = '/home/team08/shuqi/mels'
 
 # print(path_lab)
 dir_lab = os.listdir(path_lab)
