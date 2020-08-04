@@ -56,8 +56,9 @@ def check_charset(file_path):
 path_lab = '/home/team08/shuqi/labels'
 path_mel = '/home/team08/shuqi/mels'
 
-path_lab = '/home/wangpei/PycharmProjects/shuqi/labels'
-path_mel = '/home/wangpei/PycharmProjects/shuqi/mels'
+# path_lab = '/home/wangpei/PycharmProjects/shuqi/labels'
+# path_mel = '/home/wangpei/PycharmProjects/shuqi/mels'
+
 # print(path_lab)
 dir_lab = os.listdir(path_lab)
 dir_mel = os.listdir(path_mel)
