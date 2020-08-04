@@ -256,6 +256,7 @@ n_batch = len(input_concat) // (seq_length*batch_size)
 
 input_x = tf.compat.v1.placeholder(tf.float32, [None,seq_length,578])
 mel_y = tf.compat.v1.placeholder(tf.float32, [None, seq_length, 80])
+input_x = prenet_yhhc(input_x)
 cbhg_out = cbhg(input_x,True,scope='cbhg_yhhc',K=8,projections=[256, 578],depth=256)
 cbhg_out = prenet2_yhhc(cbhg_out)
 
