@@ -1,3 +1,6 @@
+#!/usr/bin/python3
+# coding: utf-8
+
 import os, sys
 import numpy as np
 import tensorflow as tf
@@ -50,9 +53,11 @@ def check_charset(file_path):
         charset = chardet.detect(data)['encoding']
     return charset
 
-path_lab = '/home/team08/shuqi/labels'
-path_mel = '/home/team08/shuqi/mels'
+# path_lab = '/home/team08/shuqi/labels'
+# path_mel = '/home/team08/shuqi/mels'
 
+path_lab = '/home/wangpei/PycharmProjects/shuqi/labels'
+path_mel = '/home/wangpei/PycharmProjects/shuqi/mels'
 # print(path_lab)
 dir_lab = os.listdir(path_lab)
 dir_mel = os.listdir(path_mel)
@@ -69,7 +74,7 @@ print(len(seg_tag_set))
 print(len(prosody_set))
 
 total_len = 0
-for file in dir_lab[:1000]:
+for file in dir_lab[:35]:
     file_name = os.path.splitext(file)[0]
     # print("file:", file_name)
     file_name_mel = os.path.join(path_mel, file_name + '.npy')
@@ -229,8 +234,8 @@ def conv1d(inputs, kernel_size, channels, activation, is_training, scope):
         return tf.layers.batch_normalization(conv1d_output, training=is_training)
 
 def prenet_yhhc(input):
-    out = tf.nn.relu(tf.layers.dense(input, 256))
-    out = tf.layers.dense(out, 256)
+    out = tf.nn.relu(tf.layers.dense(input, 578))
+    out = tf.layers.dense(out, 578)
     return out
 
 def prenet2_yhhc(input):
@@ -256,7 +261,7 @@ n_batch = len(input_concat) // (seq_length*batch_size)
 
 input_x = tf.compat.v1.placeholder(tf.float32, [None,seq_length,578])
 mel_y = tf.compat.v1.placeholder(tf.float32, [None, seq_length, 80])
-input_x = prenet_yhhc(input_x)
+# input_x = prenet_yhhc(input_x)
 cbhg_out = cbhg(input_x,True,scope='cbhg_yhhc',K=8,projections=[256, 578],depth=256)
 cbhg_out = prenet2_yhhc(cbhg_out)
 
@@ -290,9 +295,14 @@ with tf.compat.v1.Session() as sess:
             # print(batch_x.shape)
             sess.run(train, feed_dict={input_x:batch_x,mel_y: batch_y})
             if  n % 10 == 0:
-                print("loss %d :" %n, sess.run(loss_batch, feed_dict={input_x:batch_x, mel_y: batch_y}))
+                tf.summary.scalar('loss' ,sess.run(loss_batch, feed_dict={input_x:batch_x, mel_y: batch_y}))
+                merge_summary = tf.summary.merge_all()
+                train_writer = tf.summary.FileWriter('logs/', sess.graph)
+                train_summary = sess.run(merge_summary, feed_dict={input_x:batch_x, mel_y: batch_y})
+                train_writer.add_summary(train_summary, epoch*n_batch+n)
+                print("11loss %d :" %n, sess.run(loss_batch, feed_dict={input_x:batch_x, mel_y: batch_y}))
        # if epoch % 4 == 0:
             # acc = sess.run(accuracy, feed_dict={x: X_test, y: Y_test})
-        print("loss %d :" %epoch , sess.run(loss_batch,  feed_dict={input_x:batch_x,mel_y: batch_y}))
+        print("l22oss %d :" %epoch , sess.run(loss_batch,  feed_dict={input_x:batch_x,mel_y: batch_y}))
         saver.save(sess, "model.ckpt")
     end_time = time.perf_counter()
