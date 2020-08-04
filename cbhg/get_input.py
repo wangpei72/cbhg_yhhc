@@ -53,8 +53,8 @@ def check_charset(file_path):
         charset = chardet.detect(data)['encoding']
     return charset
 
-# path_lab = '/home/team08/shuqi/labels'
-# path_mel = '/home/team08/shuqi/mels'
+path_lab = '/home/team08/shuqi/labels'
+path_mel = '/home/team08/shuqi/mels'
 
 path_lab = '/home/wangpei/PycharmProjects/shuqi/labels'
 path_mel = '/home/wangpei/PycharmProjects/shuqi/mels'
@@ -74,7 +74,7 @@ print(len(seg_tag_set))
 print(len(prosody_set))
 
 total_len = 0
-for file in dir_lab[:51]:
+for file in dir_lab[:900]:
     file_name = os.path.splitext(file)[0]
     # print("file:", file_name)
     file_name_mel = os.path.join(path_mel, file_name + '.npy')
