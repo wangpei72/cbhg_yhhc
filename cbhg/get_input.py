@@ -50,8 +50,8 @@ def check_charset(file_path):
         charset = chardet.detect(data)['encoding']
     return charset
 
-path_lab = './shuqi/labels'
-path_mel = './shuqi/mels'
+path_lab = '/home/team08/shuqi/labels'
+path_mel = '/home/team08/shuqi/mels'
 
 # print(path_lab)
 dir_lab = os.listdir(path_lab)
@@ -69,9 +69,9 @@ print(len(seg_tag_set))
 print(len(prosody_set))
 
 total_len = 0
-for file in dir_lab[:20]:
+for file in dir_lab[:1000]:
     file_name = os.path.splitext(file)[0]
-    print("file:", file_name)
+    # print("file:", file_name)
     file_name_mel = os.path.join(path_mel, file_name + '.npy')
     path = os.path.join(path_lab, file)
     with open(path,encoding='utf-8') as f:
@@ -88,7 +88,7 @@ for file in dir_lab[:20]:
                 line[5] = float(line[5])
                 lines.append(line)
         except KeyError:
-            print("no kye : \" \"")
+            print("no kye : \" \" %s" % file)
             # if(line[0] != ' '):
         else:
             pass
@@ -107,7 +107,7 @@ for file in dir_lab[:20]:
     # print('mel_len',mel_len)
 #inputs_lab = np.array(inputs_lab)
 inputs_lab = inputs_lab.reshape(total_len, 6)
-print(inputs_lab.shape)
+#print(inputs_lab.shape)
 # inputs_lab[:,:,4:] = inputs_lab[:,:,4:].astype  ('float32')
 inputs_mel = inputs_mel.reshape(total_len,80)
 
@@ -138,7 +138,7 @@ c = sess.run(input_seg_embedding, feed_dict={input_seg_ids:inputs_lab[:,2]})
 d = sess.run(input_prsd_embedding, feed_dict={input_prsd_ids:inputs_lab[:,3]})
 e = inputs_lab[:,4:].astype(np.float32)
 # f = inputs_lab[:,:,5].astype(np.float32)
-input_concat = sess.run(tf.concat([a,b,c,d,e],axis=-1))
+input_concat = sess.run(tf.concat([tf.to_float(a),b,c,d,e],axis=-1))
 # print(np.array(a).shape)
 # print(sess.run(input_seg_embedding, feed_dict={input_seg_ids:inputs_lab[:,:,2]}))
 # print("phone_em:", sess.run(input_phone_set_embedding, feed_dict={input_phone_set_ids:inputs_lab[:,0],
@@ -249,8 +249,8 @@ def cbhg_yhhc(input_lab):
 
 batch_size = 25
 seq_length = 100
-LEARNING_RATE_BASE = 0.01
-LEARNING_RATE_DECAY = 0.99
+LEARNING_RATE_BASE = 0.1
+LEARNING_RATE_DECAY = 0.999
 n_batch = len(input_concat) // (seq_length*batch_size)
 
 
@@ -269,7 +269,7 @@ train = tf.compat.v1.train.AdamOptimizer(learning_rate).minimize(loss_batch, glo
 # out_y = cbhg_yhhc()
 saver = tf.train.Saver()
 import time
-
+	
 with tf.compat.v1.Session() as sess:
     start_time = time.perf_counter()
     sess.run(tf.compat.v1.global_variables_initializer())
@@ -286,10 +286,12 @@ with tf.compat.v1.Session() as sess:
                 batch_y = np.append(batch_y,y)
             batch_x = batch_x.reshape(batch_size, 100, 578)
             batch_y = batch_y.reshape(batch_size, 100, 80)
-            print(batch_x.shape)
+            # print(batch_x.shape)
             sess.run(train, feed_dict={input_x:batch_x,mel_y: batch_y})
-        if epoch % 4 == 0:
+            if  n % 10 == 0:
+                print("loss %d :" %n, sess.run(loss_batch, feed_dict={input_x:batch_x, mel_y: batch_y}))
+       # if epoch % 4 == 0:
             # acc = sess.run(accuracy, feed_dict={x: X_test, y: Y_test})
-            print(sess.run(loss_batch,  feed_dict={input_x:batch_x,mel_y: batch_y}))
-            saver.save(sess, "model.ckpt")
+        print("loss %d :" %epoch , sess.run(loss_batch,  feed_dict={input_x:batch_x,mel_y: batch_y}))
+        saver.save(sess, "model.ckpt")
     end_time = time.perf_counter()
