@@ -74,7 +74,7 @@ print(len(seg_tag_set))
 print(len(prosody_set))
 
 total_len = 0
-for file in dir_lab[:35]:
+for file in dir_lab[:51]:
     file_name = os.path.splitext(file)[0]
     # print("file:", file_name)
     file_name_mel = os.path.join(path_mel, file_name + '.npy')
@@ -295,14 +295,15 @@ with tf.compat.v1.Session() as sess:
             # print(batch_x.shape)
             sess.run(train, feed_dict={input_x:batch_x,mel_y: batch_y})
             if  n % 10 == 0:
-                tf.summary.scalar('loss' ,sess.run(loss_batch, feed_dict={input_x:batch_x, mel_y: batch_y}))
-                merge_summary = tf.summary.merge_all()
-                train_writer = tf.summary.FileWriter('logs/', sess.graph)
-                train_summary = sess.run(merge_summary, feed_dict={input_x:batch_x, mel_y: batch_y})
-                train_writer.add_summary(train_summary, epoch*n_batch+n)
-                print("11loss %d :" %n, sess.run(loss_batch, feed_dict={input_x:batch_x, mel_y: batch_y}))
+                print("smallloss %d :" %n, sess.run(loss_batch, feed_dict={input_x:batch_x, mel_y: batch_y}))
+            tf.summary.scalar('loss', sess.run(loss_batch, feed_dict={input_x: batch_x, mel_y: batch_y}))
+            merge_summary = tf.summary.merge_all()
+            train_writer = tf.summary.FileWriter('logs/', sess.graph)
+            train_summary = sess.run(merge_summary, feed_dict={input_x: batch_x, mel_y: batch_y})
+            train_writer.add_summary(train_summary, epoch * n_batch + n)
        # if epoch % 4 == 0:
             # acc = sess.run(accuracy, feed_dict={x: X_test, y: Y_test})
-        print("l22oss %d :" %epoch , sess.run(loss_batch,  feed_dict={input_x:batch_x,mel_y: batch_y}))
+        # print("bigloss %d :" %epoch , sess.run(loss_batch,  feed_dict={input_x:batch_x,mel_y: batch_y}))
+        # train_writer.close()
         saver.save(sess, "model.ckpt")
     end_time = time.perf_counter()
