@@ -273,6 +273,9 @@ learning_rate = tf.compat.v1.train.exponential_decay(LEARNING_RATE_BASE, global_
                                                      n_batch, LEARNING_RATE_DECAY)
 train = tf.compat.v1.train.AdamOptimizer(learning_rate).minimize(loss_batch, global_step=global_step)
 # out_y = cbhg_yhhc()
+tf.summary.scalar('loss', loss_batch)
+merge_summary = tf.summary.merge_all()
+train_writer = tf.summary.FileWriter('logs/', sess.graph)
 saver = tf.train.Saver()
 import time
 	
@@ -296,14 +299,14 @@ with tf.compat.v1.Session() as sess:
             sess.run(train, feed_dict={input_x:batch_x,mel_y: batch_y})
             if  n % 10 == 0:
                 print("smallloss %d :" %n, sess.run(loss_batch, feed_dict={input_x:batch_x, mel_y: batch_y}))
-            tf.summary.scalar('loss', sess.run(loss_batch, feed_dict={input_x: batch_x, mel_y: batch_y}))
-            merge_summary = tf.summary.merge_all()
-            train_writer = tf.summary.FileWriter('logs/', sess.graph)
-            train_summary = sess.run(merge_summary, feed_dict={input_x: batch_x, mel_y: batch_y})
-            train_writer.add_summary(train_summary, epoch * n_batch + n)
+
+
        # if epoch % 4 == 0:
             # acc = sess.run(accuracy, feed_dict={x: X_test, y: Y_test})
         # print("bigloss %d :" %epoch , sess.run(loss_batch,  feed_dict={input_x:batch_x,mel_y: batch_y}))
         # train_writer.close()
+
+        train_summary = sess.run(merge_summary, feed_dict={input_x: batch_x, mel_y: batch_y})
+        train_writer.add_summary(train_summary, epoch * n_batch + n)
         saver.save(sess, "model.ckpt")
     end_time = time.perf_counter()
