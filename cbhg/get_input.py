@@ -46,18 +46,14 @@ for c in range(len(prosody_set)):
 	prosody_set_d[prosody_set[c]] = c
 # print(phone_set_d)
 
-def check_charset(file_path):
-    import chardet
-    with open(file_path, "rb") as f:
-        data = f.read(4)
-        charset = chardet.detect(data)['encoding']
-    return charset
+#path_lab = './shuqi/labels'
+#path_mel = './shuqi/mels'
+
+#path_lab = '/home/wangpei/PycharmProjects/shuqi/labels'
+#path_mel = '/home/wangpei/PycharmProjects/shuqi/mels
 
 path_lab = '/home/team08/shuqi/labels'
 path_mel = '/home/team08/shuqi/mels'
-
-# path_lab = '/home/wangpei/PycharmProjects/shuqi/labels'
-# path_mel = '/home/wangpei/PycharmProjects/shuqi/mels'
 
 # print(path_lab)
 dir_lab = os.listdir(path_lab)
@@ -68,18 +64,15 @@ inputs_lab = np.array(inputs_lab)
 inputs_mel = []
 inputs_mel = np.array(inputs_mel)
 
-# print(dir_lab)
-print(len(phone_set))
-print(len(tone_set))
-print(len(seg_tag_set))
-print(len(prosody_set))
 
 total_len = 0
-for file in dir_lab[:900]:
+except_count = 0
+for file in dir_lab[:5000]:
     file_name = os.path.splitext(file)[0]
     # print("file:", file_name)
     file_name_mel = os.path.join(path_mel, file_name + '.npy')
     path = os.path.join(path_lab, file)
+
     with open(path,encoding='utf-8') as f:
         lines = []
         try:
@@ -94,7 +87,9 @@ for file in dir_lab[:900]:
                 line[5] = float(line[5])
                 lines.append(line)
         except KeyError:
-            print("no kye : \" \" %s" % file)
+            except_count += 1
+            if except_count % 100 == 0 :
+                print("no kye : \" \" %s" % file)
             # if(line[0] != ' '):
         else:
             pass
@@ -117,34 +112,8 @@ inputs_lab = inputs_lab.reshape(total_len, 6)
 # inputs_lab[:,:,4:] = inputs_lab[:,:,4:].astype  ('float32')
 inputs_mel = inputs_mel.reshape(total_len,80)
 
-input_phone_set_ids = tf.compat.v1.placeholder(dtype=tf.int32, shape=[None])
-phone_set_embedding = tf.Variable(tf.random.truncated_normal([118, 448], stddev =0.1))
-input_phone_set_embedding = tf.nn.embedding_lookup(phone_set_embedding, input_phone_set_ids)
+# input_phone_set_ids = tf.compat.v1.placeholder(dtype=tf.int32, shape=[None])
 
-input_tone_ids = tf.compat.v1.placeholder(dtype=tf.int32, shape=[None])
-tone_embedding = tf.Variable(tf.random.truncated_normal([12, 64], stddev=0.1))
-input_tone_embedding = tf.nn.embedding_lookup(tone_embedding, input_tone_ids)
-
-input_seg_ids = tf.placeholder(dtype=tf.int32, shape=[None])
-seg_embedding = tf.Variable(tf.random.truncated_normal([5, 32], stddev=0.1))
-input_seg_embedding = tf.nn.embedding_lookup(seg_embedding, input_seg_ids)
-
-input_prsd_ids = tf.compat.v1.placeholder(dtype=tf.int32, shape=[None])
-prsd_embedding = tf.Variable(tf.random.truncated_normal([6, 32], stddev=0.1))
-input_prsd_embedding = tf.nn.embedding_lookup(prsd_embedding, input_prsd_ids)
-
-sess = tf.compat.v1.InteractiveSession()
-sess.run(tf.global_variables_initializer())
-# print(seg_embedding.eval())
-print(inputs_lab.shape)
-
-a = sess.run(input_phone_set_embedding, feed_dict={input_phone_set_ids:inputs_lab[:,0]})
-b = sess.run(input_tone_embedding, feed_dict={input_tone_ids:inputs_lab[:,1]})
-c = sess.run(input_seg_embedding, feed_dict={input_seg_ids:inputs_lab[:,2]})
-d = sess.run(input_prsd_embedding, feed_dict={input_prsd_ids:inputs_lab[:,3]})
-e = inputs_lab[:,4:].astype(np.float32)
-# f = inputs_lab[:,:,5].astype(np.float32)
-input_concat = sess.run(tf.concat([tf.to_float(a),b,c,d,e],axis=-1))
 # print(np.array(a).shape)
 # print(sess.run(input_seg_embedding, feed_dict={input_seg_ids:inputs_lab[:,:,2]}))
 # print("phone_em:", sess.run(input_phone_set_embedding, feed_dict={input_phone_set_ids:inputs_lab[:,0],
@@ -159,8 +128,8 @@ input_concat = sess.run(tf.concat([tf.to_float(a),b,c,d,e],axis=-1))
 #                                                input_tone_ids:inputs_lab[:1],
 #                                                input_seg_ids:inputs_lab[:,2],
 #                                                input_prsd_ids:inputs_lab[:,3]}))
-print("test", input_concat.shape)
-print("mel", inputs_mel.shape)
+# print("test", input_concat.shape)
+# print("mel", inputs_mel.shape)
 
 def cbhg(inputs, is_training, scope, K, projections, depth):
     #inputs.reshape(1,None,578)
@@ -257,13 +226,29 @@ batch_size = 25
 seq_length = 150
 LEARNING_RATE_BASE = 0.1
 LEARNING_RATE_DECAY = 0.999
-n_batch = len(input_concat) // (seq_length*batch_size)
+n_batch = len(inputs_lab) // (seq_length*batch_size)
 
 
-input_x = tf.compat.v1.placeholder(tf.float32, [None,seq_length,578])
+input_x = tf.compat.v1.placeholder(tf.float32, [None,seq_length,6])
 mel_y = tf.compat.v1.placeholder(tf.float32, [None, seq_length, 80])
-# input_x = prenet_yhhc(input_x)
-cbhg_out = cbhg(input_x,True,scope='cbhg_yhhc',K=8,projections=[256, 578],depth=256)
+
+phone_set_embedding = tf.Variable(tf.random.truncated_normal([118, 448], stddev =0.1))
+input_phone_set_embedding = tf.nn.embedding_lookup(phone_set_embedding, tf.to_int32(input_x[:,:,0]))
+
+tone_embedding = tf.Variable(tf.random.truncated_normal([12, 64], stddev=0.1))
+input_tone_embedding = tf.nn.embedding_lookup(tone_embedding, tf.to_int32(input_x[:,:,1]))
+
+seg_embedding = tf.Variable(tf.random.truncated_normal([5, 32], stddev=0.1))
+input_seg_embedding = tf.nn.embedding_lookup(seg_embedding, tf.to_int32(input_x[:,:,2]))
+
+prsd_embedding = tf.Variable(tf.random.truncated_normal([6, 32], stddev=0.1))
+input_prsd_embedding = tf.nn.embedding_lookup(prsd_embedding, tf.to_int32(input_x[:,:,3]))
+
+e = tf.to_float(input_x[:,:,4:])
+
+input_concat = tf.concat([input_phone_set_embedding,input_tone_embedding,input_seg_embedding,input_prsd_embedding,e],axis=-1)
+
+cbhg_out = cbhg(input_concat,True,scope='cbhg_yhhc',K=8,projections=[256, 578],depth=256)
 cbhg_out = prenet2_yhhc(cbhg_out)
 
 loss_batch = tf.reduce_mean(tf.squared_difference(cbhg_out, mel_y))
@@ -276,12 +261,12 @@ train = tf.compat.v1.train.AdamOptimizer(learning_rate).minimize(loss_batch, glo
 # out_y = cbhg_yhhc()
 tf.summary.scalar('loss', loss_batch)
 merge_summary = tf.summary.merge_all()
-train_writer = tf.summary.FileWriter('logs/', sess.graph)
+
 saver = tf.train.Saver()
 import time
 	
 with tf.compat.v1.Session() as sess:
-
+    train_writer = tf.summary.FileWriter('logs/', sess.graph)
     sess.run(tf.compat.v1.global_variables_initializer())
     for epoch in range(5):
         for n in range(n_batch):
@@ -290,76 +275,76 @@ with tf.compat.v1.Session() as sess:
             batch_y = []
             batch_y = np.array(batch_y)
             for i in range(batch_size):
-                x = input_concat[(n*batch_size+i)*seq_length:(n*batch_size+i+1)*seq_length,:]
+                x = inputs_lab[(n*batch_size+i)*seq_length:(n*batch_size+i+1)*seq_length,:]
                 y = inputs_mel[(n*batch_size+i)*seq_length:(n*batch_size+i+1)*seq_length,:]
                 batch_x = np.append(batch_x,x)
                 batch_y = np.append(batch_y,y)
-            batch_x = batch_x.reshape(batch_size, seq_length, 578)
+            batch_x = batch_x.reshape(batch_size, seq_length, 6)
             batch_y = batch_y.reshape(batch_size, seq_length, 80)
             # print(batch_x.shape)
             sess.run(train, feed_dict={input_x:batch_x,mel_y: batch_y})
             if  n % 10 == 0:
                 print("smallloss %d :" %n, sess.run(loss_batch, feed_dict={input_x:batch_x, mel_y: batch_y}))
 
-    npy_idx = 1
-    for file in dir_lab[1:6]:
-        file_name = os.path.splitext(file)[0]
-        # print("file:", file_name)
-        file_name_mel = os.path.join(path_mel, file_name + '.npy')
-        path = os.path.join(path_lab, file)
-        with open(path,encoding='utf-8') as f:
-            lines = []
-            try:
-                for line in f.read().split('\n'):
-                    line = line.split('\t')
-                    # print(line[0])
-                    line[0] = phone_set_d[line[0]]
-                    line[1] = tone_set_d[line[1]]
-                    line[2] = seg_tag_set_d[line[2]]
-                    line[3] = prosody_set_d[line[3]]
-                    line[4] = float(line[4])
-                    line[5] = float(line[5])
-                    lines.append(line)
-            except KeyError:
-                print("no kye : \" \" %s" % file)
-                # if(line[0] != ' '):
-            else:
-                pass
-            lines_len = len(lines)
-        lines = np.array(lines)
-        print(lines.shape)
-        input_phone_set_ids_test = tf.compat.v1.placeholder(dtype=tf.int32, shape=[None])
-        phone_set_embedding_test = tf.Variable(tf.random.truncated_normal([118, 448], stddev =0.1))
-        input_phone_set_embedding_test = tf.nn.embedding_lookup(phone_set_embedding, input_phone_set_ids_test)
+    # npy_idx = 1
+    # for file in dir_lab[1:6]:
+    #     file_name = os.path.splitext(file)[0]
+    #     # print("file:", file_name)
+    #     file_name_mel = os.path.join(path_mel, file_name + '.npy')
+    #     path = os.path.join(path_lab, file)
+    #     with open(path,encoding='utf-8') as f:
+    #         lines = []
+    #         try:
+    #             for line in f.read().split('\n'):
+    #                 line = line.split('\t')
+    #                 # print(line[0])
+    #                 line[0] = phone_set_d[line[0]]
+    #                 line[1] = tone_set_d[line[1]]
+    #                 line[2] = seg_tag_set_d[line[2]]
+    #                 line[3] = prosody_set_d[line[3]]
+    #                 line[4] = float(line[4])
+    #                 line[5] = float(line[5])
+    #                 lines.append(line)
+    #         except KeyError:
+    #             print("no kye : \" \" %s" % file)
+    #             # if(line[0] != ' '):
+    #         else:
+    #             pass
+    #         lines_len = len(lines)
+    #     lines = np.array(lines)
+    #     print(lines.shape)
+    #     input_phone_set_ids_test = tf.compat.v1.placeholder(dtype=tf.int32, shape=[None])
+    #     phone_set_embedding_test = tf.Variable(tf.random.truncated_normal([118, 448], stddev =0.1))
+    #     input_phone_set_embedding_test = tf.nn.embedding_lookup(phone_set_embedding, input_phone_set_ids_test)
 
-        input_tone_ids_test = tf.compat.v1.placeholder(dtype=tf.int32, shape=[None])
-        tone_embedding_test = tf.Variable(tf.random.truncated_normal([12, 64], stddev=0.1))
-        input_tone_embedding_test = tf.nn.embedding_lookup(tone_embedding, input_tone_ids_test)
+    #     input_tone_ids_test = tf.compat.v1.placeholder(dtype=tf.int32, shape=[None])
+    #     tone_embedding_test = tf.Variable(tf.random.truncated_normal([12, 64], stddev=0.1))
+    #     input_tone_embedding_test = tf.nn.embedding_lookup(tone_embedding, input_tone_ids_test)
 
-        input_seg_ids_test = tf.placeholder(dtype=tf.int32, shape=[None])
-        seg_embedding_test = tf.Variable(tf.random.truncated_normal([5, 32], stddev=0.1))
-        input_seg_embedding_test = tf.nn.embedding_lookup(seg_embedding, input_seg_ids_test)
+    #     input_seg_ids_test = tf.placeholder(dtype=tf.int32, shape=[None])
+    #     seg_embedding_test = tf.Variable(tf.random.truncated_normal([5, 32], stddev=0.1))
+    #     input_seg_embedding_test = tf.nn.embedding_lookup(seg_embedding, input_seg_ids_test)
 
-        input_prsd_ids_test = tf.compat.v1.placeholder(dtype=tf.int32, shape=[None])
-        prsd_embedding_test = tf.Variable(tf.random.truncated_normal([6, 32], stddev=0.1))
-        input_prsd_embedding_test = tf.nn.embedding_lookup(prsd_embedding, input_prsd_ids_test)
+    #     input_prsd_ids_test = tf.compat.v1.placeholder(dtype=tf.int32, shape=[None])
+    #     prsd_embedding_test = tf.Variable(tf.random.truncated_normal([6, 32], stddev=0.1))
+    #     input_prsd_embedding_test = tf.nn.embedding_lookup(prsd_embedding, input_prsd_ids_test)
 
-        sess = tf.compat.v1.InteractiveSession()
-        sess.run(tf.global_variables_initializer())
-        # print(seg_embedding.eval())
+    #     sess = tf.compat.v1.InteractiveSession()
+    #     sess.run(tf.global_variables_initializer())
+    #     # print(seg_embedding.eval())
 
-        a_test = sess.run(input_phone_set_embedding_test, feed_dict={input_phone_set_ids_test:lines[:,0]})
-        b_test = sess.run(input_tone_embedding_test, feed_dict={input_tone_ids_test:lines[:,1]})
-        c_test = sess.run(input_seg_embedding_test, feed_dict={input_seg_ids_test:lines[:,2]})
-        d_test = sess.run(input_prsd_embedding_test, feed_dict={input_prsd_ids_test:lines[:,3]})
-        e_test = lines[:,4:].astype(np.float32)
-        # f = lines[:,:,5].astype(np.float32)
-        input_concat_test = sess.run(tf.concat([tf.to_float(a_test),b_test,c_test,d_test,e_test],axis=-1))
-        print(input_concat_test.shape)
-        test_result = sess.run(cbhg_out, feed_dict = {input_x: [input_concat_test[:seq_length]]})
-        print(test_result.shape)
-        path = '/home/team08/shuqi/test_mel/' + '00000' + str(npy_idx) + '.npy'
-        np.save(path,test_result)
-        npy_idx = npy_idx + 1
+    #     a_test = sess.run(input_phone_set_embedding_test, feed_dict={input_phone_set_ids_test:lines[:,0]})
+    #     b_test = sess.run(input_tone_embedding_test, feed_dict={input_tone_ids_test:lines[:,1]})
+    #     c_test = sess.run(input_seg_embedding_test, feed_dict={input_seg_ids_test:lines[:,2]})
+    #     d_test = sess.run(input_prsd_embedding_test, feed_dict={input_prsd_ids_test:lines[:,3]})
+    #     e_test = lines[:,4:].astype(np.float32)
+    #     # f = lines[:,:,5].astype(np.float32)
+    #     input_concat_test = sess.run(tf.concat([tf.to_float(a_test),b_test,c_test,d_test,e_test],axis=-1))
+    #     print(input_concat_test.shape)
+    #     test_result = sess.run(cbhg_out, feed_dict = {input_x: [input_concat_test[:seq_length]]})
+    #     print(test_result.shape)
+    #     path = 'test_mel/' + '00000' + str(npy_idx) + '.npy'
+    #     np.save(path,test_result)
+    #     npy_idx = npy_idx + 1
 
 
