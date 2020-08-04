@@ -266,9 +266,8 @@ saver = tf.train.Saver()
 import time
 	
 with tf.compat.v1.Session() as sess:
-    train_writer = tf.summary.FileWriter('logs/', sess.graph)
     sess.run(tf.compat.v1.global_variables_initializer())
-    for epoch in range(5):
+    for epoch in range(100):
         for n in range(n_batch):
             batch_x = []
             batch_x = np.array(batch_x)
@@ -283,9 +282,11 @@ with tf.compat.v1.Session() as sess:
             batch_y = batch_y.reshape(batch_size, seq_length, 80)
             # print(batch_x.shape)
             sess.run(train, feed_dict={input_x:batch_x,mel_y: batch_y})
+
             if  n % 10 == 0:
                 print("smallloss %d :" %n, sess.run(loss_batch, feed_dict={input_x:batch_x, mel_y: batch_y}))
-
+    saver.save(sess, "model.ckpt")
+    train_writer = tf.summary.FileWriter('logs/', sess.graph)
     # npy_idx = 1
     # for file in dir_lab[1:6]:
     #     file_name = os.path.splitext(file)[0]
