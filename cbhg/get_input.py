@@ -224,8 +224,8 @@ def cbhg_yhhc(input_lab):
 
 batch_size = 25
 seq_length = 150
-LEARNING_RATE_BASE = 0.1
-LEARNING_RATE_DECAY = 0.999
+LEARNING_RATE_BASE = 0.01
+LEARNING_RATE_DECAY = 0.97
 n_batch = len(inputs_lab) // (seq_length*batch_size)
 
 
@@ -285,8 +285,8 @@ with tf.compat.v1.Session() as sess:
 
             if  n % 10 == 0:
                 print("smallloss %d :" %n, sess.run(loss_batch, feed_dict={input_x:batch_x, mel_y: batch_y}))
-    saver.save(sess, "model.ckpt")
-    train_writer = tf.summary.FileWriter('logs/', sess.graph)
+        saver.save(sess, "model.ckpt")
+        train_writer = tf.summary.FileWriter('logs/', sess.graph)
     # npy_idx = 1
     # for file in dir_lab[1:6]:
     #     file_name = os.path.splitext(file)[0]
