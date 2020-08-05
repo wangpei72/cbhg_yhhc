@@ -67,7 +67,7 @@ inputs_mel = np.array(inputs_mel)
 
 total_len = 0
 except_count = 0
-for file in dir_lab[:5000]:
+for file in dir_lab[:2000]:
     file_name = os.path.splitext(file)[0]
     # print("file:", file_name)
     file_name_mel = os.path.join(path_mel, file_name + '.npy')
